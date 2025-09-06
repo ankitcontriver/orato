@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Processing - Orato AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1><i class="fas fa-layer-group"></i> Orato AI</h1>
+                <p class="tagline">Batch Processing</p>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <a href="/tts" class="tab-btn">
+                <i class="fas fa-volume-up"></i>
+                <span>Text to Speech</span>
+            </a>
+            <a href="/stt" class="tab-btn">
+                <i class="fas fa-microphone"></i>
+                <span>Speech to Text</span>
+            </a>
+            <a href="/batch" class="tab-btn active">
+                <i class="fas fa-layer-group"></i>
+                <span>Batch Processing</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-layer-group"></i> Batch Processing</h2>
+                    <div class="provider-selector">
+                        <label class="radio-container">
+                            <input type="radio" name="batch-provider" value="azure" checked>
+                            <span class="radio-label">Azure</span>
+                        </label>
+                       <!--- <label class="radio-container">
+                            <input type="radio" name="batch-provider" value="elevenlabs">
+                            <span class="radio-label">ElevenLabs</span>
+                        </label>-->
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="processing-type">
+                        <label class="radio-container">
+                            <input type="radio" name="batch-type" value="tts" checked>
+                            <span class="radio-label">Text to Speech</span>
+                        </label>
+                       <!--<label class="radio-container">
+                            <input type="radio" name="batch-type" value="stt">
+                            <span class="radio-label">Speech to Text</span>
+                        </label>-->
+                    </div>
+
+                    <div class="upload-area" id="batch-upload-area">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drop JSON file here</h3>
+                            <p>or click to browse</p>
+                            <input type="file" id="batch-file" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="batch-language">Language</label>
+                        <input type="text" id="batch-language" placeholder="e.g., en-US, ar-SA, hi-IN, fr-FR, ps-AF, prs-AF" value="en-US">
+                    </div>
+
+                    <!-- Azure Fields -->
+                    <div class="azure-only">
+                        <div class="form-group">
+                            <label for="batch-voice">Voice Name</label>
+                            <input type="text" id="batch-voice" placeholder="e.g., en-US-AvaNeural, ar-SA-ZariyahNeural" value="en-US-AvaNeural">
+                        </div>
+                        <div class="form-group">
+                            <label for="batch-api-key">Azure API Key</label>
+                            <input type="password" id="batch-api-key" placeholder="Enter your Azure API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="batch-region">Azure Region</label>
+                            <input type="text" id="batch-region" placeholder="e.g., eastus, westus2, centralus" value="eastus">
+                        </div>
+                    </div>
+
+                    <!-- ElevenLabs Fields -->
+                    <div class="elevenlabs-only" style="display: none;">
+                        <div class="form-group">
+                            <label for="batch-elevenlabs-key">ElevenLabs API Key</label>
+                            <input type="password" id="batch-elevenlabs-key" placeholder="Enter your ElevenLabs API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="batch-elevenlabs-voice">ElevenLabs Voice ID</label>
+                            <input type="text" id="batch-elevenlabs-voice" placeholder="Enter ElevenLabs Voice ID">
+                        </div>
+                    </div>
+
+                    <button id="batch-process" class="btn-primary">
+                        <i class="fas fa-cog"></i> Process Batch
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-area" id="batch-result" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-download"></i> Batch Results</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-result" id="batch-text"></div>
+                        <button id="batch-download" class="btn-download">
+                            <i class="fas fa-download"></i> Download ZIP File
+                        </button>
+                        <a id="batch-download-link" href="#" style="display: none;" download>Hidden Download Link</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global reference to file input to prevent it from being lost
+        let globalBatchFileInput = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Batch Page Loaded');
+            
+            // Provider switching
+            document.querySelectorAll('input[name="batch-provider"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const azureFields = document.querySelectorAll('.azure-only');
+                    const elevenlabsFields = document.querySelectorAll('.elevenlabs-only');
+                    
+                    if (e.target.value === 'azure') {
+                        azureFields.forEach(field => field.style.display = 'block');
+                        elevenlabsFields.forEach(field => field.style.display = 'none');
+                    } else {
+                        azureFields.forEach(field => field.style.display = 'none');
+                        elevenlabsFields.forEach(field => field.style.display = 'block');
+                    }
+                });
+            });
+
+            // Batch type switching
+            document.querySelectorAll('input[name="batch-type"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const voiceField = document.getElementById('batch-voice');
+                    const languageField = document.getElementById('batch-language');
+                    
+                    if (e.target.value === 'stt') {
+                        voiceField.style.display = 'none';
+                        voiceField.previousElementSibling.style.display = 'none';
+                        languageField.placeholder = 'e.g., en-US, ar-SA, hi-IN, fr-FR, ps-AF, prs-AF';
+                    } else {
+                        voiceField.style.display = 'block';
+                        voiceField.previousElementSibling.style.display = 'block';
+                        languageField.placeholder = 'e.g., en-US, ar-SA, hi-IN, fr-FR, ps-AF, prs-AF';
+                    }
+                });
+            });
+
+            // File upload
+            const batchUploadArea = document.getElementById('batch-upload-area');
+            const batchFileInput = document.getElementById('batch-file');
+            
+            // Store global reference
+            globalBatchFileInput = batchFileInput;
+            
+            batchUploadArea.addEventListener('click', () => {
+                globalBatchFileInput.click();
+            });
+
+            globalBatchFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    // Update only the upload-content div, not the entire innerHTML
+                    const uploadContent = batchUploadArea.querySelector('.upload-content');
+                    if (uploadContent) {
+                        uploadContent.innerHTML = `
+                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                            <h3>File Selected</h3>
+                            <p>${e.target.files[0].name}</p>
+                        `;
+                    }
+                    document.getElementById('batch-process').disabled = false;
+                }
+            });
+
+            // Process button
+            document.getElementById('batch-process').addEventListener('click', async () => {
+                // Use global reference instead of searching for element again
+                const fileInput = globalBatchFileInput || document.getElementById('batch-file');
+                const language = document.getElementById('batch-language').value;
+                const provider = document.querySelector('input[name="batch-provider"]:checked').value;
+                const batchType = document.querySelector('input[name="batch-type"]:checked').value;
+                
+                console.log('Batch Process Debug:', {
+                    fileInput: fileInput,
+                    globalFileInput: globalBatchFileInput,
+                    files: fileInput ? fileInput.files : 'no fileInput',
+                    filesLength: fileInput && fileInput.files ? fileInput.files.length : 'no files'
+                });
+                
+                if (!fileInput) {
+                    alert('File input not found!');
+                    return;
+                }
+                
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select a JSON file first');
+                    return;
+                }
+
+                let apiKey, region, voice, elevenlabsVoice;
+                
+                if (provider === 'azure') {
+                    voice = document.getElementById('batch-voice').value;
+                    apiKey = document.getElementById('batch-api-key').value;
+                    region = document.getElementById('batch-region').value;
+                    
+                    if (!voice) {
+                        alert('Please enter a voice name for Azure');
+                        return;
+                    }
+                    if (!apiKey) {
+                        alert('Please enter your Azure API key');
+                        return;
+                    }
+                } else {
+                    apiKey = document.getElementById('batch-elevenlabs-key').value;
+                    elevenlabsVoice = document.getElementById('batch-elevenlabs-voice').value;
+                    
+                    if (!apiKey) {
+                        alert('Please enter your ElevenLabs API key');
+                        return;
+                    }
+                    if (!elevenlabsVoice) {
+                        alert('Please enter ElevenLabs Voice ID');
+                        return;
+                    }
+                }
+
+                const button = document.getElementById('batch-process');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                button.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    formData.append('language', language);
+                    if (provider === 'azure') {
+                        formData.append('voice', voice);
+                        formData.append('region', region);
+                    }
+                    formData.append('provider', provider);
+                    formData.append('api_key', apiKey);
+                    if (provider === 'elevenlabs') {
+                        formData.append('elevenlabs_voice', elevenlabsVoice);
+                    }
+                    formData.append('batch_type', batchType);
+
+                    const response = await fetch('/api/batch', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('batch-text').textContent = result.message;
+                        document.getElementById('batch-result').style.display = 'block';
+                        
+                        // Show download link for ZIP file
+                        const downloadLink = document.getElementById('batch-download-link');
+                        downloadLink.href = result.download_url;
+                        downloadLink.style.display = 'block';
+                    } else {
+                        alert('Error: ' + (result.error || 'Unknown error occurred'));
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error processing batch: ' + error.message);
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            });
+
+            // Download button - now downloads ZIP file directly
+            document.getElementById('batch-download').addEventListener('click', () => {
+                const downloadLink = document.getElementById('batch-download-link');
+                if (downloadLink.href) {
+                    downloadLink.click();
+                } else {
+                    alert('No file available for download');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

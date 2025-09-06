@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Speech - Orato AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔊</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1><i class="fas fa-volume-up"></i> Orato AI</h1>
+                <p class="tagline">Text to Speech</p>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <a href="/tts" class="tab-btn active">
+                <i class="fas fa-volume-up"></i>
+                <span>Text to Speech</span>
+            </a>
+            <a href="/stt" class="tab-btn">
+                <i class="fas fa-microphone"></i>
+                <span>Speech to Text</span>
+            </a>
+            <a href="/batch" class="tab-btn">
+                <i class="fas fa-layer-group"></i>
+                <span>Batch Processing</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-volume-up"></i> Text to Speech</h2>
+                    <div class="provider-selector">
+                        <label class="radio-container">
+                            <input type="radio" name="tts-provider" value="azure" checked>
+                            <span class="radio-label">Azure</span>
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="tts-provider" value="elevenlabs">
+                            <span class="radio-label">ElevenLabs</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="tts-text">Text to Convert</label>
+                        <textarea id="tts-text" placeholder="Enter the text you want to convert to speech..." rows="4"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tts-language">Language</label>
+                        <input type="text" id="tts-language" placeholder="e.g., en-US, ar-SA, hi-IN, fr-FR, ps-AF, prs-AF" value="en-US">
+                    </div>
+
+                    <!-- Azure Fields -->
+                    <div class="azure-only">
+                        <div class="form-group">
+                            <label for="tts-voice">Voice Name</label>
+                            <input type="text" id="tts-voice" placeholder="e.g., en-US-AvaNeural, ar-SA-ZariyahNeural" value="en-US-AvaNeural">
+                        </div>
+                        <div class="form-group">
+                            <label for="tts-api-key">Azure API Key</label>
+                            <input type="password" id="tts-api-key" placeholder="Enter your Azure API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="tts-region">Azure Region</label>
+                            <input type="text" id="tts-region" placeholder="e.g., eastus, westus2, centralus" value="eastus">
+                        </div>
+                    </div>
+
+                    <!-- ElevenLabs Fields -->
+                    <div class="elevenlabs-only" style="display: none;">
+                        <div class="form-group">
+                            <label for="tts-elevenlabs-key">ElevenLabs API Key</label>
+                            <input type="password" id="tts-elevenlabs-key" placeholder="Enter your ElevenLabs API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="tts-elevenlabs-voice">ElevenLabs Voice ID</label>
+                            <input type="text" id="tts-elevenlabs-voice" placeholder="Enter ElevenLabs Voice ID">
+                        </div>
+                    </div>
+
+                    <button id="tts-generate" class="btn-primary">
+                        <i class="fas fa-magic"></i> Generate Speech
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-area" id="tts-result" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-audio"></i> Generated Audio</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="audio-player">
+                            <div class="waveform" id="waveform">
+                                <div class="waveform-container">
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                </div>
+                            </div>
+                            <div class="player-controls">
+                                <button id="play-btn" class="btn-play">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <div class="progress-container">
+                                    <div class="progress-bar" id="progress-bar">
+                                        <div class="progress" id="progress"></div>
+                                    </div>
+                                    <div class="time" id="time">0:00 / 0:00</div>
+                                </div>
+                                <button id="download-btn" class="btn-download">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('TTS Page Loaded');
+            
+            let currentAudio = null;
+            let isPlaying = false;
+
+            // Provider switching
+            document.querySelectorAll('input[name="tts-provider"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const azureFields = document.querySelectorAll('.azure-only');
+                    const elevenlabsFields = document.querySelectorAll('.elevenlabs-only');
+                    
+                    if (e.target.value === 'azure') {
+                        azureFields.forEach(field => field.style.display = 'block');
+                        elevenlabsFields.forEach(field => field.style.display = 'none');
+                    } else {
+                        azureFields.forEach(field => field.style.display = 'none');
+                        elevenlabsFields.forEach(field => field.style.display = 'block');
+                    }
+                });
+            });
+
+            // Generate button
+            document.getElementById('tts-generate').addEventListener('click', async () => {
+                console.log('TTS Generate button clicked');
+                
+                const text = document.getElementById('tts-text').value;
+                const language = document.getElementById('tts-language').value;
+                const provider = document.querySelector('input[name="tts-provider"]:checked').value;
+                
+                console.log('TTS Input values:', {
+                    text: text,
+                    language: language,
+                    provider: provider
+                });
+                
+                if (!text.trim()) {
+                    alert('Please enter text to convert');
+                    return;
+                }
+
+                let apiKey, region, voice, elevenlabsVoice;
+                
+                if (provider === 'azure') {
+                    voice = document.getElementById('tts-voice').value;
+                    apiKey = document.getElementById('tts-api-key').value;
+                    region = document.getElementById('tts-region').value;
+                    
+                    if (!voice) {
+                        alert('Please enter a voice name for Azure');
+                        return;
+                    }
+                    if (!apiKey) {
+                        alert('Please enter your Azure API key');
+                        return;
+                    }
+                } else {
+                    apiKey = document.getElementById('tts-elevenlabs-key').value;
+                    elevenlabsVoice = document.getElementById('tts-elevenlabs-voice').value;
+                    
+                    if (!apiKey) {
+                        alert('Please enter your ElevenLabs API key');
+                        return;
+                    }
+                    if (!elevenlabsVoice) {
+                        alert('Please enter ElevenLabs Voice ID');
+                        return;
+                    }
+                }
+
+                const button = document.getElementById('tts-generate');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('/api/tts', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            language: language,
+                            voice_name: provider === 'azure' ? voice : undefined,
+                            provider: provider,
+                            api_key: apiKey,
+                            region: provider === 'azure' ? region : undefined,
+                            elevenlabs_voice: provider === 'elevenlabs' ? elevenlabsVoice : undefined
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        loadAudio(result.download_url);
+                        document.getElementById('tts-result').style.display = 'block';
+                    } else {
+                        alert('Error: ' + (result.error || 'Unknown error occurred'));
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error generating speech: ' + error.message);
+                } finally {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            });
+
+            // Audio player functions
+            function loadAudio(url) {
+                console.log('Loading audio from URL:', url);
+                
+                if (currentAudio) {
+                    currentAudio.pause();
+                }
+                
+                currentAudio = new Audio(url);
+                
+                currentAudio.addEventListener('loadedmetadata', () => {
+                    console.log('Audio metadata loaded');
+                    initializeWaveform();
+                    updateProgress();
+                });
+                
+                currentAudio.addEventListener('timeupdate', () => {
+                    updateProgress();
+                    updateWaveformIntensity();
+                });
+                
+                currentAudio.addEventListener('ended', () => {
+                    console.log('Audio ended');
+                    isPlaying = false;
+                    updatePlayButton();
+                    pauseWaveform();
+                });
+                
+                currentAudio.addEventListener('error', (e) => {
+                    console.error('Audio loading error:', e);
+                    alert('Error loading audio: ' + e.message);
+                });
+            }
+
+            function initializeWaveform() {
+                const bars = document.querySelectorAll('.wave-bar');
+                bars.forEach(bar => {
+                    const height = Math.random() * 60 + 20;
+                    bar.style.height = height + '%';
+                });
+            }
+
+            function updateWaveformIntensity() {
+                if (!currentAudio) return;
+                
+                const bars = document.querySelectorAll('.wave-bar');
+                const progress = currentAudio.currentTime / currentAudio.duration;
+                
+                bars.forEach((bar, index) => {
+                    const intensity = Math.sin((progress * Math.PI * 2) + (index * 0.3)) * 0.5 + 0.5;
+                    const height = 20 + (intensity * 60);
+                    bar.style.height = height + '%';
+                });
+            }
+
+            function playWaveform() {
+                const bars = document.querySelectorAll('.wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animation = 'wavePulse 0.5s ease-in-out infinite alternate';
+                });
+            }
+
+            function pauseWaveform() {
+                const bars = document.querySelectorAll('.wave-bar');
+                bars.forEach(bar => {
+                    bar.style.animation = 'none';
+                });
+            }
+
+            function toggleAudioPlayback() {
+                if (!currentAudio) return;
+                
+                if (isPlaying) {
+                    currentAudio.pause();
+                    isPlaying = false;
+                    pauseWaveform();
+                } else {
+                    currentAudio.play();
+                    isPlaying = true;
+                    playWaveform();
+                }
+                updatePlayButton();
+            }
+
+            function updatePlayButton() {
+                const playBtn = document.getElementById('play-btn');
+                const icon = playBtn.querySelector('i');
+                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            }
+
+            function updateProgress() {
+                if (!currentAudio) return;
+                
+                const progress = document.getElementById('progress');
+                const time = document.getElementById('time');
+                
+                const currentTime = currentAudio.currentTime;
+                const duration = currentAudio.duration;
+                
+                if (duration) {
+                    const progressPercent = (currentTime / duration) * 100;
+                    progress.style.width = progressPercent + '%';
+                    
+                    time.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+                }
+            }
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            // Event listeners
+            document.getElementById('play-btn').addEventListener('click', toggleAudioPlayback);
+            
+            document.getElementById('download-btn').addEventListener('click', () => {
+                if (currentAudio) {
+                    const link = document.createElement('a');
+                    link.href = currentAudio.src;
+                    link.download = 'generated_speech.wav';
+                    link.click();
+                }
+            });
+
+            // Progress bar click
+            document.getElementById('progress-bar').addEventListener('click', (e) => {
+                if (!currentAudio) return;
+                
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const width = rect.width;
+                const seekTime = (clickX / width) * currentAudio.duration;
+                
+                currentAudio.currentTime = seekTime;
+            });
+        });
+    </script>
+</body>
+</html>

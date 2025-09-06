@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text - Orato AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1><i class="fas fa-microphone"></i> Orato AI</h1>
+                <p class="tagline">Speech to Text</p>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <a href="/tts" class="tab-btn">
+                <i class="fas fa-volume-up"></i>
+                <span>Text to Speech</span>
+            </a>
+            <a href="/stt" class="tab-btn active">
+                <i class="fas fa-microphone"></i>
+                <span>Speech to Text</span>
+            </a>
+            <a href="/batch" class="tab-btn">
+                <i class="fas fa-layer-group"></i>
+                <span>Batch Processing</span>
+            </a>
+        </nav>
+
+        <main class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-microphone"></i> Speech to Text</h2>
+                </div>
+                
+                <div class="card-body">
+                    <div class="upload-area" id="stt-upload-area">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3>Drop audio file here</h3>
+                            <p>or click to browse</p>
+                            <input type="file" id="stt-file" accept="audio/*" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt-language">Language</label>
+                        <input type="text" id="stt-language" placeholder="e.g., en-US, ar-SA, hi-IN, fr-FR, ps-AF, prs-AF" value="en-US">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt-api-key">Azure API Key</label>
+                        <input type="password" id="stt-api-key" placeholder="Enter your Azure API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt-region">Azure Region</label>
+                        <input type="text" id="stt-region" placeholder="e.g., eastus, westus2, centralus" value="eastus">
+                    </div>
+
+                    <button id="stt-process" class="btn-primary">
+                        <i class="fas fa-cog"></i> Process Audio
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-area" id="stt-result" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-text"></i> Transcription Result</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-result" id="stt-text"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global reference to file input to prevent it from being lost
+        let globalSttFileInput = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('STT Page Loaded');
+            
+            const sttFile = document.getElementById('stt-file');
+            const sttUploadArea = document.getElementById('stt-upload-area');
+            const sttProcessBtn = document.getElementById('stt-process');
+            
+            // Store global reference
+            globalSttFileInput = sttFile;
+            
+            console.log('STT Elements:', {
+                sttFile: sttFile,
+                sttUploadArea: sttUploadArea,
+                sttProcessBtn: sttProcessBtn
+            });
+
+            // Check if elements are found
+            if (!sttFile) {
+                console.error('STT file input not found!');
+                alert('STT file input not found! Please refresh the page.');
+                return;
+            }
+            
+            if (!sttUploadArea) {
+                console.error('STT upload area not found!');
+                alert('STT upload area not found! Please refresh the page.');
+                return;
+            }
+            
+            if (!sttProcessBtn) {
+                console.error('STT process button not found!');
+                alert('STT process button not found! Please refresh the page.');
+                return;
+            }
+
+            // Setup file upload
+            sttUploadArea.addEventListener('click', () => {
+                console.log('Upload area clicked');
+                globalSttFileInput.click();
+            });
+
+            globalSttFileInput.addEventListener('change', (e) => {
+                console.log('File selected:', e.target.files);
+                if (e.target.files && e.target.files.length > 0) {
+                    console.log('File name:', e.target.files[0].name);
+                    // Update only the upload-content div, not the entire innerHTML
+                    const uploadContent = sttUploadArea.querySelector('.upload-content');
+                    if (uploadContent) {
+                        uploadContent.innerHTML = `
+                            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                            <h3>File Selected</h3>
+                            <p>${e.target.files[0].name}</p>
+                        `;
+                    }
+                    sttProcessBtn.disabled = false;
+                }
+            });
+
+            // Setup process button
+            sttProcessBtn.addEventListener('click', async () => {
+                console.log('Process button clicked');
+                
+                // Use global reference instead of searching for element again
+                const fileInput = globalSttFileInput || document.getElementById('stt-file');
+                const language = document.getElementById('stt-language').value;
+                const apiKey = document.getElementById('stt-api-key').value;
+                const region = document.getElementById('stt-region').value;
+
+                console.log('STT Process Debug:', {
+                    fileInput: fileInput,
+                    globalFileInput: globalSttFileInput,
+                    files: fileInput ? fileInput.files : 'no fileInput',
+                    filesLength: fileInput && fileInput.files ? fileInput.files.length : 'no files',
+                    language: language,
+                    apiKey: apiKey ? 'present' : 'missing',
+                    region: region
+                });
+
+                if (!fileInput) {
+                    alert('File input not found!');
+                    return;
+                }
+
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Please select an audio file first');
+                    return;
+                }
+
+                if (!apiKey) {
+                    alert('Please enter your Azure API key');
+                    return;
+                }
+
+                // Process the file
+                const formData = new FormData();
+                formData.append('audio', fileInput.files[0]);
+                formData.append('language', language);
+                formData.append('api_key', apiKey);
+                formData.append('region', region);
+
+                try {
+                    sttProcessBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    sttProcessBtn.disabled = true;
+
+                    const response = await fetch('/api/stt', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('stt-text').textContent = result.text;
+                        document.getElementById('stt-result').style.display = 'block';
+                    } else {
+                        alert('Error: ' + (result.error || 'Unknown error occurred'));
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error processing audio: ' + error.message);
+                } finally {
+                    sttProcessBtn.innerHTML = '<i class="fas fa-cog"></i> Process Audio';
+                    sttProcessBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
